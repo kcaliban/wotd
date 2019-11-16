@@ -1,4 +1,11 @@
+use std::fs::File;
+use std::fs::Metadata;
+use std::env;
+use std::io::prelude::*;
+use std::path::Path;
+use std::time::SystemTime;
 use scraper::{Html, Selector};
+use chrono::{DateTime, Local, NaiveDate, Datelike};
 
 fn main() {
     let raw_html = get_html("https://www.merriam-webster.com/word-of-the-day");
@@ -23,6 +30,28 @@ fn main() {
     // Disable grey color
     print!("\x1b[22m");
 
+}
+
+// Check if file last modified today
+fn last_modified_today(path: &Path) -> bool {
+    let metadata = std::fs::metadata(path).unwrap();
+    let mut old_date : NaiveDate;
+    let now : NaiveDate = Local::today().naive_local();
+
+    if let Ok(time) = metadata.modified() {
+        // Get local date from system time
+        old_date = DateTime::<Local>::from(time).date().naive_local();
+    } else{
+        println!("Could not get time of last modification from file");
+        return false;
+    }
+
+    if now.year() > old_date.year() || now.month() > old_date.month()
+                                    || now.day() > old_date.day() {
+        return true;
+    }
+
+    false
 }
 
 // Fetch HTML
